@@ -1,6 +1,7 @@
 library(shiny)
 library(tidyverse)
 library(ggplot2)
+library(MatrixGenerics) 
 
 normalized_tibble_with_symbols <- read_csv("normalized_tibble_with_symbols.csv")
 matsymbol <- as.matrix(normalized_tibble_with_symbols[, 2:21])

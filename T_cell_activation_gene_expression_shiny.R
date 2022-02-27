@@ -1,7 +1,7 @@
-setwd("C:/Users/Lasse/Desktop/Lasse Vedel Jørgensen - Master Project/Bulk RNA-seq/T cell activation experiment/Data")
+setwd("C:/Users/Lasse/Desktop/Lasse Vedel JÃ¸rgensen - Master Project/Bulk RNA-seq/T cell activation experiment/Data")
 
 
-normalized_tibble_with_symbols <- read_csv("C:/Users/Lasse/Desktop/Lasse Vedel Jørgensen - Master Project/Bulk RNA-seq/T cell activation experiment/Data/normalized_tibble_with_symbols.csv")
+normalized_tibble_with_symbols <- read_csv("normalized_tibble_with_symbols.csv")
 matsymbol <- as.matrix(normalized_tibble_with_symbols[, 2:21])
 row.names(matsymbol) <-  normalized_tibble_with_symbols$...1
 gene_names <- sort(row.names(matsymbol))
@@ -20,7 +20,7 @@ server <- function(input, output) {
   
   data1 <- reactive({
     #Read data file and convert to a matrix 
-    normalized_tibble_with_symbols <- read_csv("C:/Users/Lasse/Desktop/Lasse Vedel Jørgensen - Master Project/Bulk RNA-seq/T cell activation experiment/Data/normalized_tibble_with_symbols.csv")
+    normalized_tibble_with_symbols <- read_csv("normalized_tibble_with_symbols.csv")
     matsymbol <- as.matrix(normalized_tibble_with_symbols[, 2:21])
     row.names(matsymbol) <-  normalized_tibble_with_symbols$...1
     

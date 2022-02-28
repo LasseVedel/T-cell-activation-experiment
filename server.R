@@ -1,7 +1,6 @@
 library(shiny)
 library(ggplot2)
 library(tidyverse)
-library(MatrixGenerics) 
 library(matrixStats) 
 
 
@@ -27,7 +26,7 @@ server <- function(input, output) {
     
     ## Calculate rowMeans and rowSDs for each row in the matrix 
     row_means_gene <- rowMeans(gene_counts)
-    row_sds_gene <- rowSds(gene_counts)
+    row_sds_gene <- matrixStats::rowSds(gene_counts)
     
     ## Collect to a dataframe which can be used for ggplot  
     df_gene <- as.data.frame(cbind(row_means_gene, row_sds_gene))

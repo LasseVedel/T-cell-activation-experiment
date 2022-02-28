@@ -2,7 +2,7 @@ library(shiny)
 library(ggplot2)
 library(tidyverse)
 library(MatrixGenerics) 
-
+library(matrixStats) 
 
 
 server <- function(input, output) {

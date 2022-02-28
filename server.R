@@ -6,16 +6,18 @@ library(matrixStats)
 
 server <- function(input, output) {
   
-  plotInput <- reactive({
+  DataInput <- reactive({
     #Read data file and convert to a matrix 
-    normalized_tibble_with_symbols <- read_csv("normalized_tibble_with_symbols.csv")
+    normalized_tibble_with_symbols <- read_csv("C:/Users/Lasse/Desktop/Lasse Vedel Jorgensen - Master Project/Bulk RNA-seq/T cell activation experiment/Data/normalized_tibble_with_symbols.csv")
     matsymbol <- as.matrix(normalized_tibble_with_symbols[, 2:21])
     row.names(matsymbol) <-  normalized_tibble_with_symbols$...1
-    
-    
+    return(matsymbol)
+  }) 
+  
+  plotInput <- reactive({
     ## The gene is found in the matsymbol to extract all normalized read counts 
     ## A matrix of dim=5x4 is formed 
-    gene_counts <- t(matrix(matsymbol[input$gene,], nrow=4))
+    gene_counts <- t(matrix(DataInput()[input$gene,], nrow=4))
     
     ## Define rownames for the matrix 
     rownames(gene_counts) <- c("Non-stimulated", 

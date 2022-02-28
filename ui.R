@@ -12,7 +12,7 @@ gene_names <- sort(row.names(matsymbol))
 
 ui <- fluidPage(
   
-  titlePanel(title = span(img(src = "rstudio.png", height = 35, align = "left"), "T cell activation experiment")),
+  titlePanel(title = span(img(src = "citco.png", height = 35), "T cell activation experiment")),
   
   sidebarLayout(
     

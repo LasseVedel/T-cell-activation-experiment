@@ -30,8 +30,10 @@ ui <- fluidPage(
     ),
     
     mainPanel(
-      plotOutput("plot", width = "700px"),
-      downloadButton("dndPlot", "Download Graph")
+      plotOutput("plot1", width = "700px"),
+      downloadButton("dndPlot1", "Download plot"),
+      plotOutput("plot2", width = "700px"),
+      downloadButton("dndPlot2", "Download plot"),
     )
   )
 )

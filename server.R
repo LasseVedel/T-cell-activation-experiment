@@ -14,46 +14,26 @@ server <- function(input, output) {
     return(matsymbol)
   }) 
   
-    plotInput1 <- reactive({
-    ## The gene is found in the matsymbol to extract all normalized read counts 
-    ## A matrix of dim=5x4 is formed 
-    gene_counts <- t(matrix(DataInput()[input$gene,], nrow=4))
+  DataInput2 <- reactive({
     
-    ## Define rownames for the matrix 
-    rownames(gene_counts) <- c("Non-stimulated", 
-                               "Stimulated, 24h", 
-                               "Stimulated, 48h", 
-                               "Stimulated, 48h + LV", 
-                               "Stimulated, 72h + LV")
+    log2FCs_df <- read_csv("log2FCs_df.csv")
+    log2FCs_mat <- as.matrix(log2FCs_df[,1:7])
+    row.names(log2FCs_mat) <- log2FCs_df$names
+    return(log2FCs_mat)
     
-    ## Calculate rowMeans and rowSDs for each row in the matrix 
-    row_means_gene <- rowMeans(gene_counts)
-    row_sds_gene <- matrixStats::rowSds(gene_counts)
+  })
+  
+  DataInput3 <- reactive({
     
-    ## Collect to a dataframe which can be used for ggplot  
-    df_gene <- as.data.frame(cbind(row_means_gene, row_sds_gene))
-    
-    ## Plot the expression using ggplot 
-    p_gene <- ggplot(df_gene, aes(x=rownames(df_gene), y=row_means_gene, fill = rownames(df_gene))) + 
-      geom_bar(stat="identity", color="grey", position=position_dodge(), width = 0.7) + 
-      geom_errorbar(aes(ymin=row_means_gene-row_sds_gene, ymax=row_means_gene+row_sds_gene), width=0.2,
-                    position=position_dodge(.9), color = "#404040") + 
-      scale_fill_manual("Condition", values = c("Non-stimulated" = "blue", 
-                                                "Stimulated, 24h" = "red", 
-                                                "Stimulated, 48h" = "green",
-                                                "Stimulated, 48h + LV" = "yellow",
-                                                "Stimulated, 72h + LV" = "black")) + 
-      labs(x="Condition", y = "Normalized expression (read counts) +/- s.d.") +
-      ggtitle(label = paste(input$gene, "expression")) + 
-      theme(plot.title = element_text(color = "black", size = 12, face = "bold", hjust = 0.5)) + 
-      theme(axis.text.x = element_text(angle = 30, hjust=1))
-    
-    print(p_gene)
+    padjust_df <- read_csv("padjust_df.csv")
+    padjust_mat <- as.matrix(padjust_df[,1:7])
+    row.names(padjust_mat) <- padjust_df$names
+    return(padjust_mat)
     
   })
   
   
-  plotInput2 <- reactive({
+  plotInput1 <- reactive({
     ## The gene is found in the matsymbol to extract all normalized read counts 
     ## A matrix of dim=5x4 is formed 
     gene_counts <- t(matrix(DataInput()[input$gene,], nrow=4))
@@ -73,7 +53,7 @@ server <- function(input, output) {
                                    "Stimulated, 72h + LV" = "black")) + 
       labs(x="Condition", y = "Normalized expression (read counts)") +
       ggtitle(label = paste(input$gene, "expression")) + 
-      theme(plot.title = element_text(color = "black", size = 12, face = "bold", hjust = 0.5)) + 
+      theme(plot.title = element_text(color = "black", size = 14, face = "bold", hjust = 0.5)) + 
       theme(axis.text.x = element_text(angle = 30, hjust=1))
     
     print(b_gene)
@@ -81,16 +61,111 @@ server <- function(input, output) {
   })
   
   
+  plotInput2 <- reactive({
+    
+    gene <- input$gene
+    
+    #Extracting values for the gene of interest
+    gene_vals <- as.numeric(DataInput2()[gene,])
+    p_vals <- as.numeric(DataInput3()[gene,])
+    p_vals <- format(p_vals, digits=3,scientific = T)
+    
+    #Creating data frame that contains information on specific gene 
+    df_to_plot <- as.data.frame(cbind("Conditions" = colnames(DataInput2()),
+                                      "Log2FCs" = as.numeric(gene_vals)))
+    #defining levels
+    levels <- c("Stimulated, 24h vs. Non-stimulated",
+                "Stimulated, 48h vs. Non-stimulated",
+                "Stimulated, 48h + LV vs. Non-stimulated",
+                "Stimulated, 72h + LV vs. Non-stimulated",
+                "Stimulated, 48h vs. Stimulated, 24h",
+                "Stimulated, 48h + LV vs. Stimulated, 48h",
+                "Stimulated, 72h + LV vs. Stimulated, 48h + LV")
+    
+    df_to_plot$Conditions <- factor(df_to_plot$Conditions,                                    
+                                    levels = levels)
+    
+    ## Plot the Log2FCs
+    L2FC_p <- ggplot(df_to_plot, aes(x=Conditions, y=as.numeric(Log2FCs))) +
+      geom_point(size=3, fill=alpha("black", 1.0), alpha=0.7, shape=21, stroke=2) +
+      geom_segment( aes(x=Conditions, xend=Conditions, y=0, yend=as.numeric(Log2FCs))) + 
+      geom_hline(yintercept=0, linetype="dashed", color = "red", size=2) + 
+      labs(x="Tested conditions", y = "Log2 fold changes (Log2FC)",
+           subtitle = "Shrunken Log2FCs, p-values obtained by Wald testing (Benjamini-Hochberg adjusted)") +
+      ggtitle(label = paste("Log2 fold changes for", gene)) + 
+      theme(plot.title = element_text(color = "black", size = 14, face = "bold", hjust = 0.5)) + 
+      theme(axis.text.x = element_text(angle = 30, hjust=1)) + 
+      theme(
+        axis.title.x = element_text(size = 16),
+        axis.text.x = element_text(size = 10, margin=margin(b = 10, unit = "pt")),
+        axis.title.y = element_text(size = 14),
+        axis.text.y = element_text(size = 14),
+        plot.title = element_text(margin=margin(b = 20, unit = "pt"))) +
+      annotate("label", 
+             x = levels, 
+             y = c((max(gene_vals)-min(gene_vals))/10+gene_vals), 
+             label = c(paste("p =", p_vals[1]),
+                       paste("p =", p_vals[2]),
+                       paste("p =", p_vals[3]),
+                       paste("p =", p_vals[4]),
+                       paste("p =", p_vals[5]),
+                       paste("p =", p_vals[6]),
+                       paste("p =", p_vals[7])))
+    
+    print(L2FC_p)
+    
+  })
+  
+  
+  
+  #Generating the table displaying log2FCs and p-values
+  tableInput1 <- reactive({
+    
+    levels <- c("Stimulated, 24h vs. Non-stimulated",
+                "Stimulated, 48h vs. Non-stimulated",
+                "Stimulated, 48h + LV vs. Non-stimulated",
+                "Stimulated, 72h + LV vs. Non-stimulated",
+                "Stimulated, 48h vs. Stimulated, 24h",
+                "Stimulated, 48h + LV vs. Stimulated, 48h",
+                "Stimulated, 72h + LV vs. Stimulated, 48h + LV")
+    gene <- input$gene
+    
+    #Extracting values for the gene of interest
+    gene_vals <- as.numeric(DataInput2()[gene,])
+    gene_vals_digits <- format(gene_vals, digits=2,scientific = F)
+    p_vals <- as.numeric(DataInput3()[gene,])
+    p_vals <- format(p_vals, digits=3,scientific = T)
+    
+    #Creating the table 
+    table_with_values <- as.data.frame(cbind("Shrunken log2FCs" = gene_vals_digits,
+                                             "Adjusted p-values" = p_vals))
+    
+    row.names(table_with_values) <- levels
+    table_with_values <- t(table_with_values)
+    return(table_with_values)
+    
+  })
+  
+  
+  
+  
+  #
+  #All of the outputs generated from this script 
+  #
+  
+  #Plot for the normalized expression 
   output$plot1 <- renderPlot({
     print(plotInput1())
     ggsave("plot1.png", plotInput1(), dpi = 300)
   })
   
+  #Plot for the log2FC plot 
   output$plot2 <- renderPlot({
     print(plotInput2())
     ggsave("plot2.png", plotInput2(), dpi = 300)
   })
   
+  #Download handler for normalized expression plot 
   output$dndPlot1 <- downloadHandler(
     filename = function() {
       "plot1.png"
@@ -100,6 +175,7 @@ server <- function(input, output) {
     }
   )
   
+  #Download handler for log2FC plot 
   output$dndPlot2 <- downloadHandler(
     filename = function() {
       "plot2.png"
@@ -108,4 +184,12 @@ server <- function(input, output) {
       file.copy("plot2.png", file, overwrite=TRUE)
     }
   )
+  
+  #Output for log2FC/p-value table 
+  output$table1 <- renderTable({
+    tableInput1()
+  },
+  width = "900px",
+  rownames = T)
+  
 }

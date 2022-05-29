@@ -1,6 +1,6 @@
 # init.R
 #
-# Example R code to install packages if not already installed
+# Install packages if not already installed
 #
 
 my_packages = c("shiny", "ggplot2", "tidyverse", "matrixStats")

@@ -16,8 +16,8 @@ server <- function(input, output) {
   
   DataInput2 <- reactive({
     
-    log2FCs_df <- read_csv("log2FCs_df.csv")
-    log2FCs_mat <- as.matrix(log2FCs_df[,1:7])
+    log2FCs_df <- read.csv("log2FCs_df.csv", header = T)
+    log2FCs_mat <- as.matrix(log2FCs_df[,2:8])
     row.names(log2FCs_mat) <- log2FCs_df$names
     return(log2FCs_mat)
     
@@ -25,12 +25,13 @@ server <- function(input, output) {
   
   DataInput3 <- reactive({
     
-    padjust_df <- read_csv("padjust_df.csv")
-    padjust_mat <- as.matrix(padjust_df[,1:7])
+    padjust_df <- read.csv("df_padj.csv", header = T)
+    padjust_mat <- as.matrix(padjust_df[,2:8])
     row.names(padjust_mat) <- padjust_df$names
     return(padjust_mat)
     
   })
+  
   
   
   plotInput1 <- reactive({
@@ -39,12 +40,14 @@ server <- function(input, output) {
     gene_counts <- t(matrix(DataInput()[input$gene,], nrow=4))
     values <- as.vector(t(gene_counts)) 
     names <- c(rep("Non-stimulated", 4),rep("Stimulated, 24h", 4),rep("Stimulated, 48h", 4),rep("Stimulated, 48h + LV", 4),rep("Stimulated, 72h + LV", 4))
-    count_df <- data.frame(value = values, name = names)
+    donors <- factor(rep(c("Donor 1", "Donor 2", "Donor 3", "Donor 4")))
+    count_df <- data.frame(value = values, name = names, donor = donors)
     
     
     b_gene <- ggplot(count_df, aes(x=names, y=values, fill = names)) +
-      geom_boxplot(color="#4d4d4d", lwd = 0.2) + 
-      geom_jitter(alpha=0.6, width=0.00, color = "#8c8c8c") + 
+      geom_boxplot(color="#4d4d4d", lwd = 0.2, outlier.shape = NA) + 
+      theme_classic() + 
+      geom_point(aes(shape = donor), color = "#8c8c8c", size = 2) + 
       scale_fill_manual("Condition", 
                         values = c("Non-stimulated" = "blue", 
                                    "Stimulated, 24h" = "red", 
@@ -54,7 +57,14 @@ server <- function(input, output) {
       labs(x="Condition", y = "Normalized expression (read counts)") +
       ggtitle(label = paste(input$gene, "expression")) + 
       theme(plot.title = element_text(color = "black", size = 14, face = "bold", hjust = 0.5)) + 
-      theme(axis.text.x = element_text(angle = 30, hjust=1))
+      theme(axis.text.x = element_text(angle = 30, hjust=1)) + 
+      theme(
+        legend.title = element_blank(),
+        axis.title.x = element_text(size = 16),
+        axis.text.x = element_text(size = 14, margin=margin(b = 10, unit = "pt")),
+        axis.title.y = element_text(size = 16),
+        axis.text.y = element_text(size = 14),
+        plot.title = element_text(size = 16))
     
     print(b_gene)
     
@@ -71,8 +81,14 @@ server <- function(input, output) {
     p_vals <- format(p_vals, digits=3,scientific = T)
     
     #Creating data frame that contains information on specific gene 
-    df_to_plot <- as.data.frame(cbind("Conditions" = colnames(DataInput2()),
-                                      "Log2FCs" = as.numeric(gene_vals)))
+    df_to_plot <- data.frame("Conditions" = c("Stimulated, 24h vs. Non-stimulated",
+                                                       "Stimulated, 48h vs. Non-stimulated",
+                                                       "Stimulated, 48h + LV vs. Non-stimulated",
+                                                       "Stimulated, 72h + LV vs. Non-stimulated",
+                                                       "Stimulated, 48h vs. Stimulated, 24h",
+                                                       "Stimulated, 48h + LV vs. Stimulated, 48h",
+                                                       "Stimulated, 72h + LV vs. Stimulated, 48h + LV"),
+                                      "Log2FCs" = as.numeric(gene_vals))
     #defining levels
     levels <- c("Stimulated, 24h vs. Non-stimulated",
                 "Stimulated, 48h vs. Non-stimulated",
@@ -102,15 +118,15 @@ server <- function(input, output) {
         axis.text.y = element_text(size = 14),
         plot.title = element_text(margin=margin(b = 20, unit = "pt"))) +
       annotate("label", 
-             x = levels, 
-             y = c((max(gene_vals)-min(gene_vals))/10+gene_vals), 
-             label = c(paste("p =", p_vals[1]),
-                       paste("p =", p_vals[2]),
-                       paste("p =", p_vals[3]),
-                       paste("p =", p_vals[4]),
-                       paste("p =", p_vals[5]),
-                       paste("p =", p_vals[6]),
-                       paste("p =", p_vals[7])))
+               x = levels, 
+               y = c((max(gene_vals)-min(gene_vals))/10+gene_vals), 
+               label = c(paste("p =", p_vals[1]),
+                         paste("p =", p_vals[2]),
+                         paste("p =", p_vals[3]),
+                         paste("p =", p_vals[4]),
+                         paste("p =", p_vals[5]),
+                         paste("p =", p_vals[6]),
+                         paste("p =", p_vals[7])))
     
     print(L2FC_p)
     
